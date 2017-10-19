@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import com.yworks.yfiles.view.GraphControl?>
+<?import com.yworks.yfiles.view.GraphOverviewControl?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.web.WebView?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.layout.HBox?>
+<?import java.net.URL?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.Hyperlink?>
+<BorderPane fx:controller="se.addinit.genera.generatree.GeneraTreeController" xmlns:fx="http://javafx.com/fxml">
+
+  <center>
+    <GraphControl fx:id="graphControl"/>
+  </center>
+ <left>
+    <VBox maxWidth="500">
+
+      <!-- The overview that displays the overall structure of the graph simplified.-->
+      <TitledPane animated="false" collapsible="false" expanded="true" maxHeight="1.7976931348623157E308"
+                  text="Overview">
+        <content>
+          <GraphOverviewControl fx:id="overviewControl"
+                                prefHeight="200"
+                                prefWidth="500"
+                                maxHeight="Infinity"
+                                maxWidth="Infinity"/>
+        </content>
+      </TitledPane>
+      <!--Properties box in the lower left corner-->
+      <TitledPane animated="false" collapsible="false" expanded="true" maxHeight="1.7976931348623157E308"
+                  text="Details">
+        <content>
+          <GridPane hgap="10" vgap="5">
+            <padding><Insets top="5" right="5" bottom="5" left="5"/></padding>
+
+            <columnConstraints>
+              <ColumnConstraints hgrow="NEVER"/>
+              <ColumnConstraints hgrow="NEVER" maxWidth="550"/>
+            </columnConstraints>
+
+            <!--Left side: description-->
+            <!--The displayed text should not be cropped by the pane, so the elements are texts rather than labels.-->
+            <Text GridPane.columnIndex="0" GridPane.rowIndex="0" text="First name"/>
+            <Text GridPane.columnIndex="0" GridPane.rowIndex="1" text="Last name"/>
+            <Text GridPane.columnIndex="0" GridPane.rowIndex="2" text="Sex"/>
+            <Text GridPane.columnIndex="0" GridPane.rowIndex="3" text="id"/>
+
+            <!--Right side: data. These get updated in the controller when the current item changes.-->
+            <!--<Label GridPane.columnIndex="1" GridPane.rowIndex="0" text="${graphControl.currentItem}"/>-->
+            <HBox GridPane.columnIndex="1" GridPane.rowIndex="0" spacing="5"
+                  alignment="CENTER_LEFT">
+              <Label text="${graphControl.currentItem.tag.firstName}" />
+              <Label text="${graphControl.currentItem.tag.lastName}" />
+            </HBox>
+            <Hyperlink GridPane.columnIndex="1" GridPane.rowIndex="1" text="${graphControl.currentItem.tag.firstName}" onAction="#fristNameClicked"/>
+            <Label GridPane.columnIndex="1" GridPane.rowIndex="2" text="${graphControl.currentItem.tag.lastName}"/>
+            <Label GridPane.columnIndex="1" GridPane.rowIndex="3" text="${graphControl.currentItem.tag.person.firstName}"/>
+            <Hyperlink GridPane.columnIndex="1" GridPane.rowIndex="4" text="https://app.arkivdigital.se" onAction="#fristNameClicked"/>
+          </GridPane>
+        </content>
+      </TitledPane>      
+    </VBox>
+  </left>
+    <right>
+
+    <!--The help panel on the right side.-->
+<!--T    <TitledPane animated="false" collapsible="false" expanded="true" maxHeight="1.7976931348623157E308"
+                text="Details">
+      <content>
+        <WebView prefWidth="300.0" fx:id="webView" fontScale="1"/>
+      </content>
+    </TitledPane>-->
+  </right>
+    <top>
+    <ToolBar>
+      <items>
+        <Button onAction="#handleZoomInAction">
+          <tooltip>
+            <Tooltip text="Zoom In"/>
+          </tooltip>
+          <graphic>
+            <ImageView>
+              <image>
+                <Image url="@/resource/plus2-16.png"/>
+              </image>
+            </ImageView>
+          </graphic>
+        </Button>
+        <Button onAction="#handleZoomOutAction">
+          <tooltip>
+            <Tooltip text="Zoom Out"/>
+          </tooltip>
+          <graphic>
+            <ImageView>
+              <image>
+                <Image url="@/resource/minus2-16.png"/>
+              </image>
+            </ImageView>
+          </graphic>
+        </Button>
+        <Button onAction="#handleResetZoomAction">
+          <tooltip>
+            <Tooltip text="Zoom 1:1"/>
+          </tooltip>
+          <graphic>
+            <ImageView>
+              <image>
+                <Image url="@/resource/zoom-original2-16.png"/>
+              </image>
+            </ImageView>
+          </graphic>
+        </Button>
+        <Button onAction="#handleFitToContentAction">
+          <tooltip>
+            <Tooltip text="Fit Content"/>
+          </tooltip>
+          <graphic>
+            <ImageView>
+              <image>
+                <Image url="@/resource/fit2-16.png"/>
+              </image>
+            </ImageView>
+          </graphic>
+        </Button>
+        <Separator/>
+      </items>
+    </ToolBar>
+  </top>
+</BorderPane>
