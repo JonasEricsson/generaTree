@@ -8,7 +8,10 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.json.Json;
@@ -22,6 +25,7 @@ public class JSONParser {
 	public static List<Person>getPersons(){
 		ArrayList<Person> persons=new ArrayList<Person>();
 		
+		//String url = "http://192.168.10.118:8080/api/genealogy";
 		String url = "http://localhost:8080/api/genealogy";
 		
 		try {
@@ -33,6 +37,10 @@ public class JSONParser {
 
 		//add request header
 		con.setRequestProperty("User-Agent", "Mozilla/5.0");
+		
+		con.setRequestProperty("Content-Type", "application/json");
+		con.setRequestProperty("Accept", "application/json");
+		con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
 
 		int responseCode = con.getResponseCode();
 		System.out.println("\nSending 'GET' request to URL : " + url);
@@ -50,22 +58,77 @@ public class JSONParser {
 		JsonArray jsonArray= reader.readArray();
 		reader.close();
 	
+		System.out.println(jsonArray);
+		
 		for(JsonValue jsonValue:jsonArray){
-			Person person=new Person();
-			person.id=((JsonObject) jsonValue).getString("personId");
-			person.setFirstName(((JsonObject) jsonValue).getString("firstName"));
-			person.lastName=((JsonObject) jsonValue).getString("lastName");
-			person.sex=((JsonObject) jsonValue).getString("sex");
-			JsonArray children=((JsonObject) jsonValue).getJsonArray("childConnections");
-			for(JsonValue jsonValueChild:children)
-				person.children.add(jsonValueChild.toString().replaceAll("\"", ""));
-			persons.add(person);
-			System.out.println(person.toString());
+			try{
+				Person person=new Person();
+				person.id=((JsonObject) jsonValue).getString("personId");
+				person.setFirstName(((JsonObject) jsonValue).getString("firstName"));
+				person.setLastName(((JsonObject) jsonValue).getString("lastName"));
+				person.setSex(((JsonObject) jsonValue).getString("sex"));
+				person.setImage(((JsonObject) jsonValue).getString("imageUrl"));
+				if(person.getImage().isEmpty()){
+					if(person.getSex().equals("MALE"))
+						person.setImage("file:./bin/resource/man.png");
+					else
+						person.setImage("file:./bin/resource/woman.png");
+				}
+				else{
+					String imageUrl="http://192.168.10.118:8080/"+person.getImage();
+					System.out.println("Joppe:"+imageUrl);
+					person.setImage(imageUrl);
+				}
+				String birthYear=((JsonObject) jsonValue).getString("birthYear");
+				String birthMonth=((JsonObject) jsonValue).getString("birthMonth");
+				String birthDay=((JsonObject) jsonValue).getString("birthDay");
+				if(birthYear.isEmpty()||birthMonth.isEmpty()||birthDay.isEmpty())
+					person.setBirthDate(((JsonObject) jsonValue).getString("birthDateGed"));
+				else{
+					LocalDate birthDate=LocalDate.of(Integer.parseInt(birthYear), Integer.parseInt(birthMonth), Integer.parseInt(birthDay));
+					DateTimeFormatter formatter=DateTimeFormatter.ofPattern("yyyy LLL dd" );
+					person.setBirthDate(birthDate.format(formatter));
+				}
+				String deathYear=((JsonObject) jsonValue).getString("deathYear");
+				String deathMonth=((JsonObject) jsonValue).getString("deathMonth");
+				String deathDay=((JsonObject) jsonValue).getString("deathDay");
+				if(deathYear.isEmpty()||deathMonth.isEmpty()||deathDay.isEmpty())
+					person.setDeathDate(((JsonObject) jsonValue).getString("deathDateGed"));
+				else{
+					LocalDate deathDate=LocalDate.of(Integer.parseInt(deathYear), Integer.parseInt(deathMonth), Integer.parseInt(deathDay));
+					DateTimeFormatter formatter=DateTimeFormatter.ofPattern("yyyy LLL dd" );
+					person.setDeathDate(deathDate.format(formatter));
+				}
+				person.setBirthPlace(((JsonObject) jsonValue).getString("birthPlace"));
+				System.out.println(((JsonObject) jsonValue).getString("deathPlace"));
+				person.setDeathPlace(((JsonObject) jsonValue).getString("deathPlace"));
+				JsonArray partners=((JsonObject) jsonValue).getJsonArray("partners");
+				for(JsonValue jsonValuePartner:partners)
+					person.partners.add(jsonValuePartner.toString().replaceAll("\"", ""));
+				JsonArray children=((JsonObject) jsonValue).getJsonArray("children");
+				for(JsonValue jsonValueChild:children)
+					person.children.add(jsonValueChild.toString().replaceAll("\"", ""));
+				JsonArray sources=((JsonObject) jsonValue).getJsonArray("sources");
+				for(JsonValue jsonValueSource:sources){
+					Source source=new Source();
+					source.setId(((JsonObject) jsonValueSource).getString("sourceId"));
+					source.setTitle(((JsonObject) jsonValueSource).getString("title"));
+					source.setPublisher(((JsonObject) jsonValueSource).getString("publisher"));
+					source.setAid(((JsonObject) jsonValueSource).getString("aid"));
+					source.setRepository(((JsonObject) jsonValueSource).getString("repository"));
+					person.sources.add(source);
+				}
+				persons.add(person);
+				System.out.println(person.toString());
+			}catch(ClassCastException cx){
+				System.out.println("Person has null values.");
+			}
 		}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}	
+		}
+		System.out.println("Returning "+persons.size()+" persons.");
 		return persons;
 	}
 	

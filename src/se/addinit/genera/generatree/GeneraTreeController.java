@@ -1,64 +1,45 @@
 package se.addinit.genera.generatree;
 
 import java.awt.Desktop;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 
-import com.yworks.yfiles.geometry.PointD;
 import com.yworks.yfiles.geometry.RectD;
 import com.yworks.yfiles.geometry.SizeD;
 import com.yworks.yfiles.graph.GraphItemTypes;
-import com.yworks.yfiles.graph.IBend;
-import com.yworks.yfiles.graph.IEdge;
 import com.yworks.yfiles.graph.IGraph;
-import com.yworks.yfiles.graph.ILabel;
 import com.yworks.yfiles.graph.IMapper;
 import com.yworks.yfiles.graph.INode;
-import com.yworks.yfiles.graph.IPort;
 import com.yworks.yfiles.graph.Mapper;
-import com.yworks.yfiles.graph.portlocationmodels.FreeNodePortLocationModel;
-import com.yworks.yfiles.graph.styles.Arrow;
 import com.yworks.yfiles.graph.styles.PolylineEdgeStyle;
 import com.yworks.yfiles.graph.styles.ShapeNodeShape;
 import com.yworks.yfiles.graph.styles.ShapeNodeStyle;
 import com.yworks.yfiles.graph.styles.ShinyPlateNodeStyle;
-import com.yworks.yfiles.layout.DefaultLayoutGraph;
-import com.yworks.yfiles.layout.LayoutGraph;
-import com.yworks.yfiles.layout.LayoutOrientation;
 import com.yworks.yfiles.layout.genealogy.FamilyTreeLayout;
 import com.yworks.yfiles.layout.genealogy.FamilyTreeLayoutData;
 import com.yworks.yfiles.layout.genealogy.FamilyType;
-import com.yworks.yfiles.layout.hierarchic.GivenLayersLayerer;
 import com.yworks.yfiles.layout.hierarchic.HierarchicLayout;
-import com.yworks.yfiles.layout.hierarchic.HierarchicLayoutData;
-import com.yworks.yfiles.layout.tree.BusNodePlacer;
-import com.yworks.yfiles.layout.tree.ChildPlacement;
-import com.yworks.yfiles.layout.tree.DefaultNodePlacer;
-import com.yworks.yfiles.layout.tree.DefaultPortAssignment;
-import com.yworks.yfiles.layout.tree.DendrogramNodePlacer;
-import com.yworks.yfiles.layout.tree.LeftRightNodePlacer;
-import com.yworks.yfiles.layout.tree.PortAssignmentMode;
-import com.yworks.yfiles.layout.tree.RootAlignment;
-import com.yworks.yfiles.layout.tree.RoutingStyle;
-import com.yworks.yfiles.layout.tree.TreeLayout;
-import com.yworks.yfiles.layout.tree.TreeLayoutData;
+import com.yworks.yfiles.view.BridgeManager;
 import com.yworks.yfiles.view.GraphControl;
+import com.yworks.yfiles.view.GraphObstacleProvider;
 import com.yworks.yfiles.view.GraphOverviewControl;
 import com.yworks.yfiles.view.MouseWheelBehaviors;
 import com.yworks.yfiles.view.Pen;
-import com.yworks.yfiles.view.input.GraphEditorInputMode;
 import com.yworks.yfiles.view.input.GraphViewerInputMode;
 import com.yworks.yfiles.view.input.MoveInputMode;
-import com.yworks.yfiles.view.input.MoveViewportInputMode;
-import com.yworks.yfiles.view.input.OverviewInputMode;
 
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tooltip;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.web.WebView;
 
@@ -68,7 +49,9 @@ public class GeneraTreeController {
 		public GraphOverviewControl overviewControl;
 		private IMapper<INode, FamilyType> familyTypeMapper;
 		 public WebView webView;
-	
+		 public VBox vbox;
+		 public ImageView imageView;
+		 
 	  public void initialize() {
 		    // Called by the JavaFX framework on loading.
 		    IGraph graph = graphControl.getGraph();
@@ -82,9 +65,19 @@ public class GeneraTreeController {
 		    inputMode.setFocusableItems(GraphItemTypes.NODE);
 		    MoveInputMode moveInputMode=new MoveInputMode();
 		    inputMode.add(moveInputMode);
+		    inputMode.setClickHitTestOrder(
+		            new GraphItemTypes[]{
+		                    GraphItemTypes.NODE.or(GraphItemTypes.EDGE),
+		                    GraphItemTypes.LABEL});
+	
 
-
-		    inputMode.addItemLeftClickedListener((source, args) -> updateDetails());
+		    // register a listener
+		    inputMode.addItemLeftClickedListener((src, eventArgs) -> {
+		    	if(eventArgs.getItem() instanceof INode){
+			      INode hitNode = (INode) eventArgs.getItem();
+			      updateSources(hitNode);
+		      }
+		    });
 		    
 		    
 		 // display tooltips for nodes
@@ -106,6 +99,9 @@ public class GeneraTreeController {
 		    
 		    graphControl.setInputMode(inputMode);
 		    
+		    BridgeManager bridgeManager = new BridgeManager();
+		    bridgeManager.setCanvasControl(graphControl);
+		    bridgeManager.addObstacleProvider(new GraphObstacleProvider());
 		    
 		    // setup the overview.
 		    overviewControl.setGraphControl(graphControl);
@@ -116,7 +112,7 @@ public class GeneraTreeController {
 		    ShinyPlateNodeStyle nodeStyle = new ShinyPlateNodeStyle();
 		    nodeStyle.setPaint(Color.LIGHTBLUE);
 		    graph.getNodeDefaults().setStyle(nodeStyle);
-		    graph.getNodeDefaults().setSize(new SizeD(200, 30));
+		    graph.getNodeDefaults().setSize(new SizeD(200, 60));
 
 		    ShinyPlateNodeStyle pinkNodeStyle = new ShinyPlateNodeStyle();
 		    pinkNodeStyle.setPaint(Color.LIGHTPINK);
@@ -151,14 +147,40 @@ public class GeneraTreeController {
 		    	INode node = graph.createNode();
 		    	person.node=node;
 		    	node.setTag(person);
-		    	if(person.sex.equals("MALE"))
+		    	if(person.getSex().equals("MALE"))
 		    		familyTypeMapper.setValue(node, FamilyType.MALE);
 		    	else{
 		    		graph.setStyle(node, pinkNodeStyle);
 		    		familyTypeMapper.setValue(node, FamilyType.FEMALE);
 		    	}
-		    	graph.addLabel(node, person.getFirstName()+" "+person.lastName);	
+		    	graph.addLabel(node, person.getFirstName()+" "+person.getLastName()+"\n"+person.getBirthDate()+" - "+person.getDeathDate());
 		    }
+		    
+		    // Create all couples
+		    for(Person person:persons){
+		    	for(String partnerId:person.partners){
+		    		String key="";
+		    		if(person.getSex().equals("MALE"))
+		    			key=person.id+partnerId;
+		    		else
+		    			key=partnerId+person.id;
+		    		if(coupleHashMap.containsKey(key))
+		    			System.out.println("Couple already created");
+		    		else{
+			    		Person partner=getPersonById(partnerId, persons);
+						Couple couple=new Couple();
+						couple.setPerson1(person);
+						couple.setPerson2(partner);
+						INode family = graph.createNode(new RectD(300, 0, 5, 5), blackNodeStyle);
+					    familyTypeMapper.setValue(family, FamilyType.FAMILY);
+				        graph.createEdge(person.node, family);
+				        graph.createEdge(partner.node, family);
+				        couple.setFamilyNode(family);
+				        coupleHashMap.put(key, couple);
+			        }		    				  	
+		    	}
+		    }
+		    
 		    
 		    for(Person person:persons){
 		    	if(person.children.isEmpty()==false){
@@ -167,7 +189,7 @@ public class GeneraTreeController {
 		    			if(child==null)
 		    				System.out.println("Could not find child with id "+id);
 		    			else{
-		    				if(person.sex.equals("MALE"))
+		    				if(person.getSex().equals("MALE"))
 		    					child.father=person;
 		    				else{
 		    					child.mother=person;
@@ -181,16 +203,20 @@ public class GeneraTreeController {
 		    						if(father==null)
 		    							System.out.println("Could not find father!");
 		    						else{
-		    							Couple couple=new Couple();
-		    							couple.setPerson1(person);
-		    							couple.setPerson2(father);
-		    							INode family = graph.createNode(new RectD(300, 0, 5, 5), blackNodeStyle);
-		    						    familyTypeMapper.setValue(family, FamilyType.FAMILY);
-		    					        graph.createEdge(person.node, family);
-		    					        graph.createEdge(father.node, family);
-		    					        couple.setFamilyNode(family);
-		    					        coupleHashMap.put(person.id, couple);
-		    					        graph.createEdge(family, child.node);
+		    							String key=father.id+person.id;
+		    							Couple couple=coupleHashMap.get(key);
+		    							graph.createEdge(couple.getFamilyNode(), child.node);
+		    							
+//		    							Couple couple=new Couple();
+//		    							couple.setPerson1(person);
+//		    							couple.setPerson2(father);
+//		    							INode family = graph.createNode(new RectD(300, 0, 5, 5), blackNodeStyle);
+//		    						    familyTypeMapper.setValue(family, FamilyType.FAMILY);
+//		    					        graph.createEdge(person.node, family);
+//		    					        graph.createEdge(father.node, family);
+//		    					        couple.setFamilyNode(family);
+//		    					        coupleHashMap.put(person.id, couple);
+//		    					        graph.createEdge(family, child.node);
 		    						}
 		    					}
 		    				}
@@ -256,43 +282,73 @@ public class GeneraTreeController {
 	        familyTreeLayout.setSpacingBetweenFamilyMembers(20);
 	        FamilyTreeLayoutData familyTreeLayoutData=new FamilyTreeLayoutData();
 	        familyTreeLayoutData.getFamilyTypes().setMapper(familyTypeMapper);
-	        System.out.println("max Zoom:"+graphControl.getMaximumZoom());
-	        System.out.println("Zoom:"+graphControl.getZoom());
-	        System.out.println("Zoom:"+graphControl.getZoom());
 	        graph.applyLayout(familyTreeLayout,familyTreeLayoutData);
 
 
 	        // fit it nicely into the component
-	        graphControl.setZoom(0.5);
+//	        graphControl.setZoom(0.5);
 	        graphControl.fitGraphBounds();
-		    graphControl.setZoom(0.5);
-		    graphControl.updateContentRect();
-		    graphControl.setMouseWheelBehavior(MouseWheelBehaviors.ZOOM);
-		    //graphControl.zoomTo(new RectD(300, 0, 5, 5));
-		    System.out.println("Height:"+graphControl.getViewportHeight());
-		    System.out.println("Width:"+graphControl.getViewportWidth());
-		    
+//		    graphControl.setZoom(0.5);
+//		    graphControl.updateContentRect();
+//		    graphControl.setMouseWheelBehavior(MouseWheelBehaviors.ZOOM);
+		
 
 		  }
 
 
 
-		private Object updateDetails() {
+		private Person getPersonById(String partnerId, List<Person> persons) {
+			for(Person person:persons){
+				if(person.id.equals(partnerId))
+							return person;	
+			}
+			return null;
+		}
+
+
+
+		private Object updateSources(INode currentItem) {
 			System.out.println("Clicked!");
-		    if (graphControl.getCurrentItem() instanceof INode) {
-		        INode currentItem = (INode) graphControl.getCurrentItem();
 		        Person person=(Person) currentItem.getTag();
-		        System.out.println(person.toString());
-		        //webView.getEngine().load("https://www.dn.se/");
-		    }
+		        if(person==null)
+		        	return null;
+		        System.out.println(person.getImage());
+				Image image=new Image(person.getImage());
+				imageView.setImage(image);
+		        vbox.getChildren().clear();
+		        for(Source source:person.sources){
+		        	Hyperlink hyperlink=new Hyperlink();
+		        	hyperlink.setText(source.getTitle()+","+source.getRepository()+","+source.getPublisher());
+		        	hyperlink.setUserData(source);
+		        	hyperlink.setOnAction(new EventHandler<ActionEvent>() {
+		        	    @Override
+		        	    public void handle(ActionEvent e) {
+		        	        sourceClicked(hyperlink);
+		        	    }
+		        	});
+		        	vbox.getChildren().add(hyperlink);
+		        }
 		return null;
 	}
 
-
+		public void sourceClicked(Hyperlink hyperlink){
+			Source source=(Source)hyperlink.getUserData();
+			String url="https://www.arkivdigital.se/aid/info/"+source.getAid();
+			System.out.println(url);
+			  try {
+					Desktop.getDesktop().browse(new URI(url));
+				} catch (IOException ex) {
+					// TODO Auto-generated catch block
+					ex.printStackTrace();
+				} catch (URISyntaxException ex) {
+					// TODO Auto-generated catch block
+					ex.printStackTrace();
+				}
+		}
 
 		private Person getFatherForChild(String id, List<Person> persons) {
 			for(Person person:persons){
-				if(person.sex.equals("MALE"))
+				if(person.getSex().equals("MALE"))
 					for(String childId:person.children)
 						if(id.equals(childId))
 							return person;
@@ -316,6 +372,7 @@ public class GeneraTreeController {
 		public void onLoaded() {
 		    // Called by our application right after stage is loaded.
 			  graphControl.fitGraphBounds();
+			  graphControl.setZoom(1);
 		  }
 		  
 		  private HierarchicLayout createLayouter() {

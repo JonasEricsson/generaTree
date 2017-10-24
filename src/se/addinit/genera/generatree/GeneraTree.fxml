@@ -23,27 +23,33 @@
 <BorderPane fx:controller="se.addinit.genera.generatree.GeneraTreeController" xmlns:fx="http://javafx.com/fxml">
 
   <center>
-    <GraphControl fx:id="graphControl"/>
+    <GraphControl fx:id="graphControl" styleClass="orgChartLabel"/>
   </center>
+  <stylesheets>
+    <URL value="@GeneraTree.css" />
+  </stylesheets>
  <left>
-    <VBox maxWidth="500">
+    <VBox maxWidth="400">
 
       <!-- The overview that displays the overall structure of the graph simplified.-->
       <TitledPane animated="false" collapsible="false" expanded="true" maxHeight="1.7976931348623157E308"
-                  text="Overview">
+                  text="Översikt">
         <content>
           <GraphOverviewControl fx:id="overviewControl"
                                 prefHeight="200"
-                                prefWidth="500"
+                                prefWidth="400"
                                 maxHeight="Infinity"
                                 maxWidth="Infinity"/>
         </content>
       </TitledPane>
       <!--Properties box in the lower left corner-->
+      <HBox fx:id="hbImage" alignment="TOP_CENTER">
+ 	  		<ImageView fx:id="imageView" fitHeight="96" fitWidth="84" preserveRatio="true" />
+      </HBox>
       <TitledPane animated="false" collapsible="false" expanded="true" maxHeight="1.7976931348623157E308"
-                  text="Details">
+                  text="Detaljer">
         <content>
-          <GridPane hgap="10" vgap="5">
+          <GridPane hgap="10" vgap="5" style=" -fx-border-color:black; -fx-border-width: 1; -fx-border-style: solid;">
             <padding><Insets top="5" right="5" bottom="5" left="5"/></padding>
 
             <columnConstraints>
@@ -53,23 +59,34 @@
 
             <!--Left side: description-->
             <!--The displayed text should not be cropped by the pane, so the elements are texts rather than labels.-->
-            <Text GridPane.columnIndex="0" GridPane.rowIndex="0" text="First name"/>
-            <Text GridPane.columnIndex="0" GridPane.rowIndex="1" text="Last name"/>
-            <Text GridPane.columnIndex="0" GridPane.rowIndex="2" text="Sex"/>
-            <Text GridPane.columnIndex="0" GridPane.rowIndex="3" text="id"/>
+            <Text GridPane.columnIndex="0" GridPane.rowIndex="0" text="Förnamn"/>
+            <Text GridPane.columnIndex="0" GridPane.rowIndex="1" text="Efternamn"/>
+            <Text GridPane.columnIndex="0" GridPane.rowIndex="2" text="Kön"/>
+            <Text GridPane.columnIndex="0" GridPane.rowIndex="3" text="Född"/>
+            <Text GridPane.columnIndex="0" GridPane.rowIndex="4" text="Plats"/>
+            <Text GridPane.columnIndex="0" GridPane.rowIndex="5" text="Död"/>
+            <Text GridPane.columnIndex="0" GridPane.rowIndex="6" text="Plats"/>
 
             <!--Right side: data. These get updated in the controller when the current item changes.-->
-            <!--<Label GridPane.columnIndex="1" GridPane.rowIndex="0" text="${graphControl.currentItem}"/>-->
-            <HBox GridPane.columnIndex="1" GridPane.rowIndex="0" spacing="5"
-                  alignment="CENTER_LEFT">
-              <Label text="${graphControl.currentItem.tag.firstName}" />
-              <Label text="${graphControl.currentItem.tag.lastName}" />
-            </HBox>
-            <Hyperlink GridPane.columnIndex="1" GridPane.rowIndex="1" text="${graphControl.currentItem.tag.firstName}" onAction="#fristNameClicked"/>
-            <Label GridPane.columnIndex="1" GridPane.rowIndex="2" text="${graphControl.currentItem.tag.lastName}"/>
-            <Label GridPane.columnIndex="1" GridPane.rowIndex="3" text="${graphControl.currentItem.tag.person.firstName}"/>
-            <Hyperlink GridPane.columnIndex="1" GridPane.rowIndex="4" text="https://app.arkivdigital.se" onAction="#fristNameClicked"/>
+
+            <Text GridPane.columnIndex="1" GridPane.rowIndex="0"  text="${graphControl.currentItem.tag.firstName}"/>
+            <Text GridPane.columnIndex="1" GridPane.rowIndex="1" text="${graphControl.currentItem.tag.lastName}"/>
+            <Text GridPane.columnIndex="1" GridPane.rowIndex="2" text="${graphControl.currentItem.tag.sex}"/>
+            <Text GridPane.columnIndex="1" GridPane.rowIndex="3" text="${graphControl.currentItem.tag.birthDate}"/>
+            <Text GridPane.columnIndex="1" GridPane.rowIndex="4" text="${graphControl.currentItem.tag.birthPlace}"/>
+            <Text GridPane.columnIndex="1" GridPane.rowIndex="5" text="${graphControl.currentItem.tag.deathDate}"/>
+            <Text GridPane.columnIndex="1" GridPane.rowIndex="6" text="${graphControl.currentItem.tag.deathPlace}"/>
+
           </GridPane>
+        </content>
+      </TitledPane> 
+            <TitledPane animated="false" collapsible="false" expanded="true" maxHeight="1.7976931348623157E308"
+                  text="Källor">
+        <content>
+        <VBox fx:id="vbox">
+     		<!--<Hyperlink text="https://app.arkivdigital.se" onAction="#fristNameClicked"/>-->
+   
+      	</VBox>
         </content>
       </TitledPane>      
     </VBox>
